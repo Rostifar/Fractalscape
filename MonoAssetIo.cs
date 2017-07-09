@@ -56,10 +56,10 @@ namespace Fractalscape
         }
 
 
-        public static void SaveToPlayerPrefs (string key, string value)
+        public static void SaveToPlayerPrefs (string key, Fractal value)
         {
             var obj = PlayerPrefs.GetString(key);
-            List<string> objList;
+            List<Fractal> objList;
 
             if (obj != "")
             {
@@ -68,13 +68,13 @@ namespace Fractalscape
             }
             else
             {
-                objList = new List<string> {value};
+                objList = new List<Fractal> {value};
             }
             PlayerPrefs.SetString(key, JsonUtility.ToJson(objList));
             PlayerPrefs.Save();
         }
 
-        public static void DeleteFromPlayerPrefs(string key, string value) //After uninstall
+        public static void DeleteFromPlayerPrefs(string key, Fractal value) //After uninstall
         {
             var json = JsonUtility.FromJson<FractalLog>(PlayerPrefs.GetString(key));
             json.Fractals.Remove(value);

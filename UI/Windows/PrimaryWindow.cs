@@ -155,7 +155,7 @@ namespace Fractalscape
             }
         }
 
-        public IEnumerator Populate(List<string> fractals)
+        public IEnumerator Populate(List<Fractal> fractals)
         {
             for (var i = 0 ; i < fractals.Count; i++) //no it cannot be converted you lying piece of....
             {

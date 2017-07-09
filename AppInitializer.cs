@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Remoting.Messaging;
 using System.Threading;
 using Oculus.Platform;
 using UnityEngine;
@@ -11,24 +12,29 @@ namespace Fractalscape
 {   
     /***TODO
         
-        *Correctly set-iap.    []
-        *Embed free experience.[]
+        * Correctly set-iap.        []
+        * Embed free experience.    []
+        * Update serializable fields[]
     ***/
     
     //Entry point to app. Checks entitlements, opens json files, and looks for app updates.
-    //Then merges the loading scene with the main menu. 
+    //Then merges the loading scene with the main menu. This class is very fragile. One change 
+    //could very well slow down the entire system.
     public class AppInitializer : MonoBehaviour
     {
+
         [SerializeField] private Camera _camera;
         [SerializeField] private GameObject _warningScreen;
+        [SerializeField] private GameObject _entitlementErrorScreen;
         [SerializeField] private GameObject _introScreen;
         
         [SerializeField] private string _accessKey;
         [SerializeField] private string _secretKey;
         [SerializeField] private string _defaultBucket;
-        [SerializeField] private List<string> _embeddedExps;
+        
         [SerializeField] private bool _updateIsGreedy;
-
+        
+        private List<string> _embeddedExps = new List<string>{"MengersCrypt"};
         private bool _sceneLoadingStarted;
         private bool _updateInfoRequestFinished;
         private bool _logFilesLoaded;
@@ -64,7 +70,7 @@ namespace Fractalscape
                 if (message.IsError)
                 {
                     Debug.Log("Oculus Sdk failed to initialize!");
-                    OVRManager.PlatformUIGlobalMenu();
+                    OVRManager.instance.ReturnToLauncher();
                 }
                 else
                 {
@@ -79,7 +85,7 @@ namespace Fractalscape
             if (message.IsError)
             {
                 Debug.Log("Entitlement check failed! App closing.");
-                OnEntitlementFailure();
+                StartCoroutine(OnEntitlementFailure());
             }
             else
             {
@@ -132,6 +138,7 @@ namespace Fractalscape
 
         private void OnSceneLoaded(Scene arg0, LoadSceneMode arg1)
         {
+            Debug.Log("SceneLoaded");
             _camera.cullingMask = 1 << 12;
             WindowManager.Instance.SetupMainMenu();
             enabled = false;
@@ -170,50 +177,66 @@ namespace Fractalscape
         private void LoadLogFiles()
         {
             Debug.Log("Loading AvailableFractals.json");
-            var availableList = Resources.Load<TextAsset>(LogNames.AvailableFractals);
-            AppSession.AvailableFractals = JsonUtility.FromJson<FractalLog>(availableList.text).Fractals;
+            AppSession.AvailableFractals = FractalLog.LoadLog(LogNames.AvailableFractals, FractalLog.OpLocation.Resources).Fractals;
 
+            Debug.Log("Loading DownloadedFractals from playerprefs");
             if (AppSession.FirstTimeUser) AddPreinstalledExperiences();
             else
             {
-                var str = PlayerPrefs.GetString(LogNames.DownloadedFractals);
-                AppSession.DownloadedFractals = str == ""
-                    ? new List<string>()
-                    : JsonUtility.FromJson<FractalLog>(str).Fractals;
+                AppSession.DownloadedFractals = FractalLog.LoadLog(LogNames.DownloadedFractals).Fractals;
+                Debug.Log("Downloaded Fractal Count: " + AppSession.DownloadedFractals.Count);
             }
-            _logFilesLoaded = true;
 
             IAP.GetViewerPurchases().OnComplete(message =>
             {
-                if (message.IsError && PlayerPrefs.HasKey(LogNames.PurchasedFractals))
+                if (message.IsError)
                 {
-                    AppSession.PurchasedFractals = JsonUtility.FromJson<FractalLog>(PlayerPrefs.GetString(LogNames.PurchasedFractals))
-                        .Fractals;
-                    AppSession.OculusDown = true;
+                    Debug.Log("Player purchases could not be retrieved. Defaulting to local copy of purchases.");
+                    AppSession.PurchasedFractals = PlayerPrefs.HasKey(LogNames.PurchasedFractals) 
+                        ? FractalLog.LoadLog(LogNames.PurchasedFractals).Fractals
+                        : new List<Fractal>();
                 }
                 else
                 {
-                    //AppSession.PurchasedFractals = PurchaseRequest.ListToFractalLog(message.GetPurchaseList()).Fractals;
+                    var list = new List<Fractal>();
+
+                    for (var i = 0; i < message.Data.Count; i++)
+                    {
+                        var data = message.Data[i];
+                        var fractal = new Fractal
+                        {
+                            Name = FractalLog.GetElementBySku(AppSession.AvailableFractals, data.Sku).Name,
+                            Sku = data.Sku,
+                            Type = 1
+                        };
+                        list.Add(fractal);
+                    }
+                    AppSession.PurchasedFractals = list;
+                    PlayerPrefs.SetString(LogNames.PurchasedFractals, JsonUtility.ToJson(list));
+                    PlayerPrefs.Save();
                 }
             });
+            _logFilesLoaded = true;
         }
 
         private void AddPreinstalledExperiences()
         {
             for (var i = 0; i < _embeddedExps.Count; i++)
             {
-                AppSession.DownloadedFractals.Add(_embeddedExps[i]);
+                var fractal = new Fractal {Name = _embeddedExps[i], Type = 0};
+                AppSession.DownloadedFractals.Add(fractal);
             }
-            var log = new FractalLog();
-            log.Fractals = AppSession.DownloadedFractals;
-            
+            var log = new FractalLog {Fractals = AppSession.DownloadedFractals};
+
             var str = JsonUtility.ToJson(log);
             PlayerPrefs.SetString(LogNames.DownloadedFractals, str);
             PlayerPrefs.Save();
         }
 
-        private void OnEntitlementFailure()
+        private IEnumerator OnEntitlementFailure()
         {
+            _entitlementErrorScreen.SetActive(true);
+            yield return new WaitForSeconds(10f);
             OVRManager.instance.ReturnToLauncher();
         }
 

@@ -16,6 +16,7 @@ namespace Fractalscape
         [SerializeField] private Button _uninstallButton;
         [SerializeField] private Button _purchaseButton;
         [SerializeField] private Button _viewButton;
+        [SerializeField] private Button _longViewButton;
 
         private string _sku;
         private static Dictionary<string, string> _openedItems = new Dictionary<string, string>();
@@ -90,8 +91,18 @@ namespace Fractalscape
                     _downloadButton.gameObject.SetActive(false);
                     _uninstallButton.gameObject.SetActive(true);
                     _purchaseButton.gameObject.SetActive(false);
-                    _viewButton.gameObject.SetActive(true);
                     _costOverlay.gameObject.SetActive(false);
+
+                    if (item.Cost <= 0)
+                    {
+                        _longViewButton.gameObject.SetActive(true);
+                        _viewButton.gameObject.SetActive(false);
+                    }
+                    else
+                    {
+                        _viewButton.gameObject.SetActive(true); 
+                        _longViewButton.gameObject.SetActive(false);
+                    }
                     break;
                 case Type.Purchase:
                     _downloadButton.gameObject.SetActive(false);

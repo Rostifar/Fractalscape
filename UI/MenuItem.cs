@@ -55,7 +55,7 @@ namespace Fractalscape
             }
             else
             {
-                if (AppSession.DownloadedFractals.Contains(Sku))
+                if (FractalLog.Contains(AppSession.DownloadedFractals, Sku))
                 {
                     newMenuType = Menu.Type.View;
                 }

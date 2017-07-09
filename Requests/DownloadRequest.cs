@@ -145,17 +145,10 @@ namespace Fractalscape
             else
             {
                 var fractalLog = new FractalLog();
-                if (AppSession.DownloadedFractals.Count > 0)
-                {
-                    AppSession.DownloadedFractals.Add(_expName);
-                    Debug.Log(AppSession.DownloadedFractals);
-                    fractalLog.Fractals = AppSession.DownloadedFractals;
-                }
-                else
-                {
-                    AppSession.DownloadedFractals.Add(_expName);
-                    fractalLog.Fractals = new List<string>{_expName};
-                }
+                var fractal = new Fractal {Name = _expName, Type = 1};
+                AppSession.DownloadedFractals.Add(fractal);
+                fractalLog.Fractals = AppSession.DownloadedFractals;
+                
                 var str = JsonUtility.ToJson(fractalLog);
                 PlayerPrefs.SetString(LogNames.DownloadedFractals, str);
                 _callback(true, this);

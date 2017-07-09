@@ -75,7 +75,7 @@ namespace Fractalscape
                     string str;
                         if (message.IsError)
                         {
-                            AppSession.PurchasedFractals.Add(_sku);
+                            AppSession.PurchasedFractals.Add(new Fractal{Name = _sku, Type = 1});
                             var log = new FractalLog {Fractals = AppSession.PurchasedFractals};
                             str = JsonUtility.ToJson(log);
                         }
@@ -113,7 +113,7 @@ namespace Fractalscape
         {
             foreach (var purchase in AppSession.PurchasedFractals)
             {
-                if (purchase == sku) return true;
+                if (purchase.Name == sku) return true;
             }
             return false;
         }
@@ -123,7 +123,7 @@ namespace Fractalscape
             var log = new FractalLog();
             foreach (var purchase in list)
             {
-                log.Fractals.Add(purchase.Sku);
+                log.Fractals.Add(new Fractal{Name = purchase.Sku, Type = 1});
             }
             return log;
         }

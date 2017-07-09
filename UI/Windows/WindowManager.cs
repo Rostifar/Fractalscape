@@ -15,8 +15,8 @@ namespace Fractalscape
         private static WindowManager _instance;
         private Stack<GameObject> _windowStack;
         private Dictionary<string, GameObject> _cachedWindows;
-        private List<string> _downloadedItems;
-        private List<string> _availableItems;
+        private List<Fractal> _downloadedItems;
+        private List<Fractal> _availableItems;
         private Dictionary<string, GameObject> _testCacheWindow;
         private bool _windowIsStackable = true;
         private const string ExplorationMenuItem = "Exploration";
@@ -185,7 +185,7 @@ namespace Fractalscape
             if (AppSession.IsConnectedToInternet)
             {
                 yield return StartCoroutine(storeWindow.Populate(items[0]));
-                items[1].Add(ExplorationMenuItem);
+                items[1].Add(new Fractal{Name = ExplorationMenuItem, Type = 0});
             }
             yield return StartCoroutine(libraryWindow.Populate(items[1]));
 
@@ -205,10 +205,10 @@ namespace Fractalscape
             storeWindow.gameObject.SetActive(false);
             AppSession.AppCamera.cullingMask = -1;
         }
-        private static List<string>[] ListIntersection(List<string> l1, List<string> l2)
+        private static List<Fractal>[] ListIntersection(List<Fractal> l1, List<Fractal> l2)
         {
-            var newL1 = new List<string>(); //Where l2 is a subset of l1
-            var newL2 = new List<string>();
+            var newL1 = new List<Fractal>(); //Where l2 is a subset of l1
+            var newL2 = new List<Fractal>();
 
             for (var i = 0; i < l1.Count; i++)
             {

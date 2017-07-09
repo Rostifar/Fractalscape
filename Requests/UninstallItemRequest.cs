@@ -56,7 +56,10 @@ namespace Fractalscape
             if (MonoAssetIo.Instance.Success)
             {
                 var fractalLog = new FractalLog();
-                AppSession.DownloadedFractals.Remove(_sku);
+                foreach (var fractal in AppSession.DownloadedFractals)
+                {
+                    if (fractal.Name == _sku) AppSession.DownloadedFractals.Remove(fractal);
+                }
                 fractalLog.Fractals = AppSession.DownloadedFractals;
                 PlayerPrefs.GetString(LogNames.DownloadedFractals, JsonUtility.ToJson(fractalLog));
                 PlayerPrefs.Save();

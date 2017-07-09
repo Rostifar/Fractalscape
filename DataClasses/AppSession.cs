@@ -10,9 +10,9 @@ namespace Fractalscape
     {
         private static AppSession _instance;
         public static bool IsConnectedToInternet { get; set; }
-        public static List<string> AvailableFractals { get; set; }
-        public static List<string> DownloadedFractals { get; set; }
-        public static List<string> PurchasedFractals { get; set; }
+        public static List<Fractal> AvailableFractals { get; set; }
+        public static List<Fractal> DownloadedFractals { get; set; }
+        public static List<Fractal> PurchasedFractals { get; set; }
 
         public Recticle Recticle { get; set; }
         public FractalscapeWebClient WebClient { get; set; }
