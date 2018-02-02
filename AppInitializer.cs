@@ -11,16 +11,6 @@ using UnityEngine.SceneManagement;
 
 namespace Fractalscape
 {   
-    /***TODO
-        
-        * Correctly set-iap.        []
-        * Embed free experience.    []
-        * Update serializable fields[]
-    ***/
-    
-    //Entry point to app. Checks entitlements, opens json files, and looks for app updates.
-    //Then merges the loading scene with the main menu. This class is very fragile. One change 
-    //could very well slow down the entire system.
     public class AppInitializer : MonoBehaviour
     {
 
@@ -28,8 +18,6 @@ namespace Fractalscape
         [SerializeField] private GameObject _warningScreen;
         [SerializeField] private GameObject _entitlementErrorScreen;
         [SerializeField] private GameObject _introScreen;
-
-        private const bool BANSI_IS_COOL = true;
         
         [SerializeField] private string _accessKey;
         [SerializeField] private string _secretKey;
