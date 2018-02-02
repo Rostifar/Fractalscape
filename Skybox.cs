@@ -88,37 +88,37 @@ public class Skybox : MonoBehaviour
 
         Vector2[] leftUv =
         {
-            //left
+            // left
             new Vector2(third+wO,1-hO),
             new Vector2(third*2-wO, 1-hO),
             new Vector2(third*2-wO, half+hO),
             new Vector2(third+wO, half+hO),
 
-            //front
+            // front
             new Vector2(third+wO, half-hO),
             new Vector2(third*2-wO, half-hO),
             new Vector2(third*2-wO, 0f+hO),
             new Vector2(third+wO, 0f+hO),
 
-            //right
+            // right
             new Vector2(0+wO, 1f-hO),
             new Vector2(third-wO, 1f-hO),
             new Vector2(third-wO, half+hO),
             new Vector2(0+wO, half+hO),
 
-            //back
+            // back
             new Vector2(third*2+wO, half-hO),
             new Vector2(1-wO, half-hO),
             new Vector2(1-wO, 0+hO),
             new Vector2(third*2+wO, 0+hO),
 
-            //bottom
+            // bottom
             new Vector2(0+wO, 0+hO),
             new Vector2(0+wO, half-hO),
             new Vector2(third-wO, half-hO),
             new Vector2(third-wO, 0+hO),
 
-            //top
+            // top
             new Vector2(1-wO, 1-hO),
             new Vector2(1-wO, half+hO),
             new Vector2(third*2+wO, half+hO),
@@ -131,18 +131,18 @@ public class Skybox : MonoBehaviour
 
         int[] leftTriangles =
         {
-            0,1,2,
-            0,2,3,
-            4,5,6,
-            4,6,7,
-            8,9,10,
-            8,10,11,
-            12,13,14,
-            12,14,15,
-            16,17,18,
-            16,18,19,
-            20,21,22,
-            20,22,23
+            0 , 1 , 2 ,
+            0 , 2 , 3 ,
+            4 , 5 , 6 ,
+            4 , 6 , 7 ,
+            8 , 9 , 10,
+            8 , 10, 11,
+            12, 13, 14,
+            12, 14, 15,
+            16, 17, 18,
+            16, 18, 19,
+            20, 21, 22,
+            20, 22, 23
         };
         _skyboxMesh.triangles = leftTriangles;
         _skyboxMesh.RecalculateNormals();

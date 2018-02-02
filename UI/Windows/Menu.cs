@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.UI;
 
 namespace Fractalscape
@@ -18,7 +20,7 @@ namespace Fractalscape
         [SerializeField] private Button _viewButton;
         [SerializeField] private Button _longViewButton;
 
-        private string _sku;
+        private MenuItem _item;
         private static Dictionary<string, string> _openedItems = new Dictionary<string, string>();
         private ConfirmationWindow _confirmationWindow;
         private const string DownloadMessage = "Are you sure you would like to download this experience?";
@@ -68,11 +70,12 @@ namespace Fractalscape
         }
 
         public override void Cleanup()
-        {
+        {/*
             if (WindowManager.Instance.NewWindow is PrimaryWindow)
             {
                 AppSession.Skybox.LoadTexture(_defaultSkybox);
             }
+            */
             DisableSiblings();
         }
 
@@ -85,38 +88,42 @@ namespace Fractalscape
                     _uninstallButton.gameObject.SetActive(false);
                     _purchaseButton.gameObject.SetActive(false);
                     _viewButton.gameObject.SetActive(false);
+                    _longViewButton.gameObject.SetActive(false);
                     _costOverlay.gameObject.SetActive(false);
                     break;
                 case Type.View:
                     _downloadButton.gameObject.SetActive(false);
-                    _uninstallButton.gameObject.SetActive(true);
                     _purchaseButton.gameObject.SetActive(false);
                     _costOverlay.gameObject.SetActive(false);
 
                     if (item.Cost <= 0)
                     {
                         _longViewButton.gameObject.SetActive(true);
+                        _uninstallButton.gameObject.SetActive(false);
                         _viewButton.gameObject.SetActive(false);
                     }
                     else
                     {
                         _viewButton.gameObject.SetActive(true); 
+                        _uninstallButton.gameObject.SetActive(true);
                         _longViewButton.gameObject.SetActive(false);
                     }
                     break;
                 case Type.Purchase:
                     _downloadButton.gameObject.SetActive(false);
                     _uninstallButton.gameObject.SetActive(false);
-                    _purchaseButton.gameObject.SetActive(false);
+                    _purchaseButton.gameObject.SetActive(true);
                     _viewButton.gameObject.SetActive(false);
+                    _longViewButton.gameObject.SetActive(false);
                     _costOverlay.gameObject.SetActive(true);
                     _cost.text = "$" + item.Cost.ToString("R");
                     break;
             }
-            _thumbnail.sprite = item.Image;
+            _thumbnail.sprite = item.ThiccImage;
             _description.text = item.Description;
-            _title.text = item.Sku;
-            _sku = item.Sku;
+            _title.text = item.Name;
+            _item = item;
+            
             AppSession.Skybox.LoadTexture(item.SkyboxMat);
             AppSession.SelectedItem = item;
         }
@@ -124,32 +131,33 @@ namespace Fractalscape
         public void DownloadItem()
         {
             WindowManager.Instance.ChangeWindow(WindowNames.ConfirmationWindow, false);
-            _confirmationWindow.SetPendingRequest(new DownloadRequest(_sku));
+            _confirmationWindow.SetPendingRequest(new DownloadRequest(_item.Name, _item.Fractal));
             _confirmationWindow.DisplayMessage(DownloadMessage);
         }
 
         public void PurchaseItem()
         {
-
             WindowManager.Instance.ChangeWindow(WindowNames.ConfirmationWindow, false);
-            _confirmationWindow.SetPendingRequest(new PurchaseRequest(_sku));
+            Assert.IsNotNull(_item.Fractal);
+            _confirmationWindow.SetPendingRequest(new PurchaseRequest(_item.Name, _item.Fractal));
             _confirmationWindow.DisplayMessage(PurchaseMessage);
         }
 
         public void UninstallItem()
         {
-
             WindowManager.Instance.ChangeWindow(WindowNames.ConfirmationWindow, false);
-            _confirmationWindow.SetPendingRequest(new UninstallItemRequest(_sku));
+            _confirmationWindow.SetPendingRequest(new UninstallItemRequest(_item.Name, _item.Fractal));
             _confirmationWindow.DisplayMessage(UninstallMessage);
         }
 
-        public void ViewItem()
+        public IEnumerator ViewItem()
         {
             AppSession.InViewer = true;
             var newRequestData = new RequestData(new ProgressMessage{Header = "Loading...", Body = "Loading Your Experience"});
             WindowManager.Instance.GetWindow<ProgressWindow>(WindowNames.ProgressWindow).AddProgressData(newRequestData);
             WindowManager.Instance.ChangeWindow(WindowNames.ProgressWindow);
+            yield return null;
+            WindowManager.Instance.GetWindow<ViewerWindow>(WindowNames.ViewerWindow).SetCurrentItem(_item);
             WindowManager.Instance.GetWindow<ConfirmationWindow>(WindowNames.ConfirmationWindow)
                 .SetButtonState(ConfirmationWindow.ButtonState.Viewer);
 
@@ -158,15 +166,23 @@ namespace Fractalscape
                 AppSession.FirstTimeUser = false;
                 WindowManager.Instance.ChangeWindow(WindowNames.ViewerTutorialWindow, false);
                 WindowManager.Instance.GetWindow<SecondaryNavigationWindow>(WindowNames.SecondaryNavigationWindow)
-                        .ActionOnPress =
-                    () =>
-                    {
-                        VideoPlayerManager.Instance.LoadVideo(_sku + "/" + _sku + ".mp4");
-                    };
+                        .ActionOnPress = () => { LoadVideo(); };
             }
             else
             {
-                VideoPlayerManager.Instance.LoadVideo(_sku + "/" + _sku + ".mp4");
+                LoadVideo();
+            }
+        }
+
+        private void LoadVideo()
+        {
+            if (_item.Cost <= 0)
+            {
+                VideoPlayerManager.Instance.LoadVideoStreamingAssets("Videos/" + _item.Fractal.Name + ".mp4");
+            }
+            else
+            {
+                VideoPlayerManager.Instance.LoadVideo(_item.Fractal.Name + "/" + _item.Fractal.Name + ".mp4");
             }
         }
 

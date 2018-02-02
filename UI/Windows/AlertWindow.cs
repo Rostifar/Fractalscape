@@ -18,10 +18,7 @@ namespace Fractalscape
 
         public void DisplayMessage(string msg)
         {
-            if (!AppSession.InViewer)
-            {
-                _displayedMsg.text = msg; 
-            }
+            _displayedMsg.text = msg; 
         }
     }
 }

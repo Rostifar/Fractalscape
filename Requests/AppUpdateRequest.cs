@@ -97,8 +97,9 @@ namespace Fractalscape
             {
                 _callback(true, this);
                 AppSession.UpdateAvailable = true;
-                AppSession.AppUpdate = JsonUtility.FromJson<AppUpdate>(File.ReadAllText(Path.Combine(Application.persistentDataPath, _dirName) + "/" + _dirName +
+                var update = JsonUtility.FromJson<AppUpdate>(File.ReadAllText(Path.Combine(Application.persistentDataPath, _dirName) + "/" + _dirName +
                                                ".json"));
+                AppSession.AppUpdate = new UsableUpdate {Update = update, UpdateType = AppUpdate.Type.Normal};
             }
         }
 

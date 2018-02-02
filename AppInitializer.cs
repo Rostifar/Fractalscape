@@ -6,6 +6,7 @@ using System.Runtime.Remoting.Messaging;
 using System.Threading;
 using Oculus.Platform;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 
 namespace Fractalscape
@@ -27,14 +28,16 @@ namespace Fractalscape
         [SerializeField] private GameObject _warningScreen;
         [SerializeField] private GameObject _entitlementErrorScreen;
         [SerializeField] private GameObject _introScreen;
+
+        private const bool BANSI_IS_COOL = true;
         
         [SerializeField] private string _accessKey;
         [SerializeField] private string _secretKey;
         [SerializeField] private string _defaultBucket;
         
         [SerializeField] private bool _updateIsGreedy;
-        
-        private List<string> _embeddedExps = new List<string>{"MengersCrypt"};
+
+        private List<string> _embeddedExps;
         private bool _sceneLoadingStarted;
         private bool _updateInfoRequestFinished;
         private bool _logFilesLoaded;
@@ -54,13 +57,9 @@ namespace Fractalscape
             //entitlements checks.
             Debug.Log("Setting up Oculus Sdk.");
             BeginOculusSetup();
-
+            
+            _embeddedExps = new List<string>{"Menger'sCrypt"};
             AppSession.FirstTimeUser = IsFirstTimeUser();
-        }
-
-        private void Start()
-        {
-            StartCoroutine(Init());
         }
         
         private void BeginOculusSetup()
@@ -82,14 +81,17 @@ namespace Fractalscape
 
         private void EntitlementCallback(Message message)
         {
+            Assert.IsNotNull(message);
             if (message.IsError)
             {
+                Debug.Log(message.GetError().Message);
                 Debug.Log("Entitlement check failed! App closing.");
                 StartCoroutine(OnEntitlementFailure());
             }
             else
             {
                 Debug.Log("Entitlement check passed.");
+                StartCoroutine(Init());
                 StartThreads();
                 LoadLogFiles();
             }
@@ -98,11 +100,12 @@ namespace Fractalscape
         private void GreedyUpdate() //Free embedded video must remain installed in app. Otherwise i have to go
         {                            //through a ton of bs.
             var version = UnityEngine.Application.version;
-            if (AppSession.FirstTimeUser || PlayerPrefs.GetString(IoRes.KVersion) != version)
+            if (!AppSession.FirstTimeUser && PlayerPrefs.GetString(IoRes.KVersion) != version)
             {
                 AppSession.UpdateAvailable = true;
                 var text = Resources.Load<TextAsset>(IoRes.VersionLog);
-                AppSession.AppUpdate = JsonUtility.FromJson<AppUpdate>(text.text);
+                var update = JsonUtility.FromJson<AppUpdate>(text.text);
+                AppSession.AppUpdate = new UsableUpdate {Update = update, UpdateType = AppUpdate.Type.Greedy};
                 PlayerPrefs.SetString(IoRes.KVersion, version);
                 PlayerPrefs.Save();
             }
@@ -180,16 +183,17 @@ namespace Fractalscape
             AppSession.AvailableFractals = FractalLog.LoadLog(LogNames.AvailableFractals, FractalLog.OpLocation.Resources).Fractals;
 
             Debug.Log("Loading DownloadedFractals from playerprefs");
-            if (AppSession.FirstTimeUser) AddPreinstalledExperiences();
-            else
+            AppSession.DownloadedFractals = FractalLog.LoadLog(LogNames.DownloadedFractals).Fractals;
+            Debug.Log("Downloaded Fractal Count: " + AppSession.DownloadedFractals.Count);
+            if (AppSession.FirstTimeUser || (!AppSession.FirstTimeUser && AppSession.DownloadedFractals.Count == 0))
             {
-                AppSession.DownloadedFractals = FractalLog.LoadLog(LogNames.DownloadedFractals).Fractals;
-                Debug.Log("Downloaded Fractal Count: " + AppSession.DownloadedFractals.Count);
+                AddPreinstalledExperiences();
             }
+            Debug.Log("Downloaded Fractal Count: " + AppSession.DownloadedFractals.Count);
 
             IAP.GetViewerPurchases().OnComplete(message =>
             {
-                if (message.IsError)
+                if (message == null || message.IsError)
                 {
                     Debug.Log("Player purchases could not be retrieved. Defaulting to local copy of purchases.");
                     AppSession.PurchasedFractals = PlayerPrefs.HasKey(LogNames.PurchasedFractals) 
@@ -212,6 +216,7 @@ namespace Fractalscape
                         list.Add(fractal);
                     }
                     AppSession.PurchasedFractals = list;
+                    Debug.Log("Purchased fractals length:" + list.Count);
                     PlayerPrefs.SetString(LogNames.PurchasedFractals, JsonUtility.ToJson(list));
                     PlayerPrefs.Save();
                 }
@@ -237,7 +242,7 @@ namespace Fractalscape
         {
             _entitlementErrorScreen.SetActive(true);
             yield return new WaitForSeconds(10f);
-            OVRManager.instance.ReturnToLauncher();
+            UnityEngine.Application.Quit();
         }
 
         private void OnApplicationQuit()

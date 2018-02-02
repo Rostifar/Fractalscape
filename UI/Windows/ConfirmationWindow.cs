@@ -11,7 +11,9 @@ namespace Fractalscape
         [SerializeField] private IRequest _pendingRequest;
         [SerializeField] private Button _acceptButton;
         [SerializeField] private Button _cancelButton;
+        private GameObject _callbackWindow;
         public GameObject ConfirmationWindowExtraneous;
+        
 
         public enum ButtonState
         {
@@ -88,14 +90,27 @@ namespace Fractalscape
             WindowManager.Instance.Revert();
         }
 
+        public void AddCallbackWindow(GameObject window)
+        {
+            _callbackWindow = window;
+        }
+
         public void ReturnToHome()
         {
             IsSetup = false;
-            WindowManager.Instance.ChangeWindow(WindowNames.LibraryWindow);
             WindowManager.Instance.EmptyStack();
             VideoPlayerManager.Instance.StopVideo();
             VideoPlayerManager.Instance.DeactivateStereoViewer();
             AppSession.InViewer = false;
+            
+            if (_callbackWindow != null)
+            {
+                WindowManager.Instance.ChangeWindow(_callbackWindow, false);
+                WindowManager.Instance.AddToStack(WindowManager.Instance.GetWindow<PrimaryWindow>(WindowNames.LibraryWindow).gameObject);
+                _callbackWindow = null;
+            }
+            else WindowManager.Instance.ChangeWindow(WindowNames.LibraryWindow);
+
             SetButtonState(ButtonState.Default);
         }
 

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Fractalscape
 {
@@ -41,7 +42,7 @@ namespace Fractalscape
             for (var i = 0; i < CurrentRequests; i++)
             {
                 _runningRequests[i].Update();
-                if (!_runningRequests[i].IsRunning()) _runningRequests.RemoveAt(i);
+                if (!_runningRequests[i].IsRunning() || _runningRequests[i] == null) _runningRequests.RemoveAt(i);
             }
         }
 
@@ -54,6 +55,7 @@ namespace Fractalscape
 
         public void MakeRequest(IRequest request)
         {
+            Assert.IsNotNull(request);
                 _runningRequests.Add(request);
                 CurrentRequest = request;
                 request.Trigger(ErrorCallback);
@@ -61,18 +63,21 @@ namespace Fractalscape
 
         private void ErrorCallback(bool success, IRequest request)
         {
-            if (success)
+            var window = success
+                ? WindowManager.Instance.GetWindow<AlertWindow>(WindowNames.SuccessWindow)
+                : WindowManager.Instance.GetWindow<AlertWindow>(WindowNames.FailureWindow);
+
+            if (AppSession.InViewer)
             {
-                WindowManager.Instance.ChangeWindow(WindowNames.SuccessWindow, false);
-                var window = WindowManager.Instance.GetWindow<AlertWindow>(WindowManager.Instance.CurrentWindow);
-                window.DisplayMessage(request.Status());
+                WindowManager.Instance.GetWindow<ConfirmationWindow>(WindowNames.ConfirmationWindow)
+                    .AddCallbackWindow(window.gameObject);
             }
             else
             {
-                WindowManager.Instance.ChangeWindow(WindowNames.FailureWindow, false);
-                var window = WindowManager.Instance.GetWindow<AlertWindow>(WindowManager.Instance.CurrentWindow);
-                window.DisplayMessage(request.Status());
+                WindowManager.Instance.ChangeWindow(window.gameObject, false);
             }
+            window.DisplayMessage(request.Status());
+
             request.FinalizeRequest(success);
         }
 

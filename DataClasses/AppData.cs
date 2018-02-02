@@ -43,7 +43,7 @@ namespace Fractalscape
         public GameObject SecondaryNavigationWindow;
         public GameObject AppUpdateWindow;
      
-        public Dictionary<Fractal, GameObject> Fractals;
+        public Dictionary<string, GameObject> Fractals;
         public GameObject MengersCrypt;
         public GameObject PoseidonsGate;
         public GameObject Exploration;
@@ -81,11 +81,11 @@ namespace Fractalscape
                 {WindowNames.AppUpdateWindow, AppUpdateWindow}
             };
 
-            Fractals = new Dictionary<Fractal, GameObject>
+            Fractals = new Dictionary<string, GameObject>
             {
-                {new Fractal{Name = "MengersCrypt", Type = 0}, MengersCrypt},
-                {new Fractal{Name = "Poseidon'sGate", Type = 1}, PoseidonsGate},
-                {new Fractal{Name = "Exploration", Type = 0}, Exploration}
+                {"Menger'sCrypt", MengersCrypt},
+                {"Poseidon'sGate", PoseidonsGate},
+                {"Exploration", Exploration}
             };
         }
         public static AppData Ref

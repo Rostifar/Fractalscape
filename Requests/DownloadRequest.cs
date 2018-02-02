@@ -15,8 +15,10 @@ namespace Fractalscape
     //NOTE: Somewhat unstable, highly important, therefore I recommend that you do not modify this class.
     public sealed class DownloadRequest : IRequest
     {
-        private readonly string _sku;
         private readonly string _expName;
+        private readonly string _fileName;
+        private Fractal _fractal;
+        
         private FractalscapeWebClient _client;
         private Job _downloadJob;
         private Job _metadataDownloadJob;
@@ -47,26 +49,18 @@ namespace Fractalscape
         private const string DefaultDownloadFailureMessage = "Error! Your experience failed to download. Please try again later.";
         private const string ProcessingMessage = "Processing....";
 
-        public DownloadRequest(string sku, string filetype = ".zip")
+        public DownloadRequest(string displayName, Fractal fractal, string filetype = ".zip")
         {
-            _expName = sku;
-            _sku = sku + filetype;
+            _expName = displayName;
+            _fileName = fractal.Name + filetype;
+            _fractal = fractal;
         }
 
         public void Setup()
         {
-            var path = Path.Combine(Application.persistentDataPath, _sku);
-            var dir = Path.Combine(Application.persistentDataPath, _expName);
-
-            _storageUtils = new StorageUtils();
-            _client = new FractalscapeWebClient();
-            _downloadJob = new Job(new Thread(delegate() { _client.GetObject(_sku); }));
-            _metadataDownloadJob = new Job(new Thread(delegate() {  _client.GetObjectMetadata(_sku);}));
-            _unpackageJob = new Job(new Thread(delegate()
-            {
-                _storageUtils.UnzipPackage(path, dir);
-            }));
-
+            var path = Path.Combine(Application.persistentDataPath, _fileName);
+            var dir = Path.Combine(Application.persistentDataPath, _fractal.Name);
+            
             _storeWindow = WindowManager.Instance.GetWindow<PrimaryWindow>(WindowNames.StoreWindow);
             _progressWindow = WindowManager.Instance.GetWindow<ProgressWindow>(WindowNames.ProgressWindow);
 
@@ -86,6 +80,15 @@ namespace Fractalscape
             _referencedItem = _storeWindow.GetMenuItem(_expName);
             _referencedItem.ChangeTitleImageColour(MenuItem.ActivatedColourIndx);
             Menu.AddOpenedItem(_requestData, _expName);
+            
+            _storageUtils = new StorageUtils();
+            _client = new FractalscapeWebClient();
+            _downloadJob = new Job(new Thread(delegate() { _client.GetObject(_fileName); }));
+            _metadataDownloadJob = new Job(new Thread(delegate() {  _client.GetObjectMetadata(_fileName);}));
+            _unpackageJob = new Job(new Thread(delegate()
+            {
+                _storageUtils.UnzipPackage(path, dir);
+            }));
         }
 
         public void Trigger(Action<bool, IRequest> callback)
@@ -139,14 +142,13 @@ namespace Fractalscape
             if (_storageUtils.Error)
             {
                 _error = true;
-                File.Delete(Path.Combine(Application.persistentDataPath, _sku));
+                File.Delete(Path.Combine(Application.persistentDataPath, _fileName));
                 ManageFailure(UnpackingUnsucessfulMessage);
             }
             else
             {
                 var fractalLog = new FractalLog();
-                var fractal = new Fractal {Name = _expName, Type = 1};
-                AppSession.DownloadedFractals.Add(fractal);
+                AppSession.DownloadedFractals.Add(_fractal);
                 fractalLog.Fractals = AppSession.DownloadedFractals;
                 
                 var str = JsonUtility.ToJson(fractalLog);

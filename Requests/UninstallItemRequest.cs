@@ -7,7 +7,8 @@ namespace Fractalscape
 {
     public sealed class UninstallItemRequest : IRequest
     {
-        private string _sku;
+        private readonly string _displayName;
+        private Fractal _fractal;
         private PrimaryWindow _libraryWindow;
         private ProgressWindow _progressWindow;
         private Menu _menu;
@@ -22,25 +23,26 @@ namespace Fractalscape
         private const string SuccessMessage = "Your experience has been sucessfully uninstalled!";
         private const string FailureMessage = "Uninstall failed. The item must not be downloaded on your device. Moving item back to the store.";
 
-        public UninstallItemRequest(string sku)
+        public UninstallItemRequest(string displayName, Fractal fractal)
         {
-            _sku = sku;
+            _displayName = displayName;
+            _fractal = fractal;
         }
 
         public void Setup()
         {
             _libraryWindow = WindowManager.Instance.GetWindow<PrimaryWindow>(WindowNames.LibraryWindow);
             _progressWindow = WindowManager.Instance.GetWindow<ProgressWindow>(WindowNames.ProgressWindow);
-            _uninstallJob = new Job(new Thread(delegate() { MonoAssetIo.Instance.UninstallExperience(_sku); }));
+            _uninstallJob = new Job(new Thread(delegate() { MonoAssetIo.Instance.UninstallExperience(_fractal.Name); }));
 
             _requestData = new RequestData(new ProgressMessage{Header = UninstallMessage, Body = ProcessingMessage});
             _progressWindow.AddProgressData(_requestData);
             WindowManager.Instance.ChangeWindow(WindowNames.ProgressWindow, false);
 
-            _referencedItem = _libraryWindow.GetMenuItem(_sku);
+            _referencedItem = _libraryWindow.GetMenuItem(_displayName);
             _referencedItem.ChangeTitleImageColour(MenuItem.ActivatedColourIndx);
 
-            Menu.AddOpenedItem(_requestData, _sku);
+            Menu.AddOpenedItem(_requestData, _displayName);
         }
 
         public void Trigger(Action<bool, IRequest> callback)
@@ -56,14 +58,15 @@ namespace Fractalscape
             if (MonoAssetIo.Instance.Success)
             {
                 var fractalLog = new FractalLog();
-                foreach (var fractal in AppSession.DownloadedFractals)
+                
+                for (var i = 0; i < AppSession.DownloadedFractals.Count; i++)
                 {
-                    if (fractal.Name == _sku) AppSession.DownloadedFractals.Remove(fractal);
+                    if (AppSession.DownloadedFractals[i].Name == _fractal.Name) 
+                        AppSession.DownloadedFractals.RemoveAt(i);
                 }
                 fractalLog.Fractals = AppSession.DownloadedFractals;
-                PlayerPrefs.GetString(LogNames.DownloadedFractals, JsonUtility.ToJson(fractalLog));
+                PlayerPrefs.SetString(LogNames.DownloadedFractals, JsonUtility.ToJson(fractalLog));
                 PlayerPrefs.Save();
-                _libraryWindow.InverseAdd(_referencedItem);
             }
             _callback(MonoAssetIo.Instance.Success, this);
         }
@@ -73,7 +76,8 @@ namespace Fractalscape
             MonoAssetIo.Instance.ProcessFinished = false;
             MonoAssetIo.Instance.Success = false;
             _referencedItem.ChangeTitleImageColour(MenuItem.DefaultColourIndx);
-            Menu.RemoveOpenItem(_sku);
+            _libraryWindow.InverseAdd(_referencedItem);
+            Menu.RemoveOpenItem(_displayName);
             WindowManager.Instance.GetWindow<PrimaryWindow>(WindowNames.StoreWindow).Cleanup();
             WindowManager.Instance.GetWindow<PrimaryWindow>(WindowNames.LibraryWindow).Cleanup();
             _running = false;

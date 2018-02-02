@@ -65,7 +65,7 @@ namespace Fractalscape
         {
             _avproPlayer.OpenVideoFromFile(MediaPlayer.FileLocation.RelativeToPeristentDataFolder, path);
         }
-
+   
         public void LoadVideoStreamingAssets(string path)
         {
             _avproPlayer.OpenVideoFromFile(MediaPlayer.FileLocation.RelativeToStreamingAssetsFolder, path);

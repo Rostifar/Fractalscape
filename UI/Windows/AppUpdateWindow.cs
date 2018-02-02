@@ -14,16 +14,24 @@ namespace Fractalscape
         [SerializeField] private Text _header;
         private Thread _loadImageThread;
 
-        public void Setup(AppUpdate data)
+        public void Setup(UsableUpdate update)
         {
-            Debug.Log(Path.Combine(Application.persistentDataPath, "AppFeed/") + data.Image);
-            byte[] b = File.ReadAllBytes(Path.Combine(Application.persistentDataPath, "AppFeed/") + data.Image);
-            Debug.Log(b.Length);
-            var texture = new Texture2D(512, 512);
-            texture.LoadImage(b);
-            _updateImage.sprite = Sprite.Create(texture, new Rect(0, 0, 512, 512), new Vector2(0, 0), 100f);
-            _header.text = data.Header;
-            _updateMessage.text = data.Message;
+            if (update.UpdateType == AppUpdate.Type.Normal)
+            {
+                Debug.Log(Path.Combine(Application.persistentDataPath, "AppFeed/") + update.Update.Image);
+                byte[] b = File.ReadAllBytes(Path.Combine(Application.persistentDataPath, "AppFeed/") + update.Update.Image);
+                Debug.Log(b.Length);
+                var texture = new Texture2D(512, 512);
+                texture.LoadImage(b);
+                _updateImage.sprite = Sprite.Create(texture, new Rect(0, 0, 512, 512), new Vector2(0, 0), 100f);
+            }
+            else
+            {
+                _updateImage.sprite = Resources.Load<Sprite>(update.Update.Image);
+            }
+
+            _header.text = update.Update.Header;
+            _updateMessage.text = update.Update.Message;
         }
 
         public override void Setup()
@@ -36,7 +44,11 @@ namespace Fractalscape
         {
             WindowManager.Instance.GetWindow<SecondaryNavigationWindow>(PartnerNavigationWindow()).
                 SwapBackButton(SecondaryNavigationWindow.ButtonType.Default);
-            Directory.Delete(Application.persistentDataPath + "/" + "AppFeed", true);
+
+            if (AppSession.AppUpdate.UpdateType == AppUpdate.Type.Normal)
+            {
+                Directory.Delete(Application.persistentDataPath + "/" + "AppFeed", true);
+            }
         }
     }
 }

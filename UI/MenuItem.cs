@@ -8,10 +8,12 @@ namespace Fractalscape
 {
     public sealed class MenuItem : MonoBehaviour
     {
-        public string Sku;
+        public string Name; //Displayed Name
         public float Cost;
         public string Description;
         public Sprite Image;
+        public Sprite ThiccImage;
+        public Fractal Fractal;
         [SerializeField] private Image _titleImage;
         public bool IsSetup { get; private set; }
         public Material SkyboxMat;
@@ -26,7 +28,7 @@ namespace Fractalscape
         };
 
         //width, height
-        public static readonly Vector2 Size = new Vector2(500, 450);
+        public static readonly Vector2 Size = new Vector2(500, 450); //TODO: Interchanged name and sku because of confusion. This will certainly fuck up a lot of code.
 
         //x, y, z
         public static readonly Vector3[] Positions =
@@ -41,7 +43,6 @@ namespace Fractalscape
         {
             IsSetup = false;
             gameObject.SetActive(false);
-
         }
 
         public void Select()
@@ -49,17 +50,17 @@ namespace Fractalscape
             var newMenuType = Menu.Type.Download;
             var menu = WindowManager.Instance.GetWindow<Menu>(WindowNames.Menu);
 
-            if (Menu.IsItemOpen(Sku))
+            if (Menu.IsItemOpen(Name))
             {
-                Menu.GetOpenItem(Sku);
+                Menu.GetOpenItem(Name);
             }
             else
             {
-                if (FractalLog.Contains(AppSession.DownloadedFractals, Sku))
+                if (FractalLog.Contains(AppSession.DownloadedFractals, Fractal.Name))
                 {
                     newMenuType = Menu.Type.View;
                 }
-                else if ((Cost <= 0 || PurchaseRequest.Purchased(Sku)) && AppSession.IsConnectedToInternet)
+                else if ((Cost <= 0 || PurchaseRequest.Purchased(Fractal.Name)) && AppSession.IsConnectedToInternet)
                 {
                     newMenuType = Menu.Type.Download;
                 }

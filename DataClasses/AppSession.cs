@@ -26,14 +26,15 @@ namespace Fractalscape
         public static MenuItem SelectedItem { get; set; }
         public static Camera AppCamera { get; set; }
         public static Skybox Skybox { get; set; }
+        public static OVRPlatformMenu OvrPlatformMenu { get; set; }
 
-        public static AppUpdate AppUpdate { get; set; }
+        public static UsableUpdate AppUpdate { get; set; }
 
         public static string AccessKey { get; set; }
         public static string SecretKey { get; set; }
         public static string DefaultBucket { get; set; }
-
-        public static bool OculusDown;
+        
+        public static bool OculusDown = false;
         public static bool OnMenu;
 
         public enum BackButtonBehavior

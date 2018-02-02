@@ -21,7 +21,7 @@ namespace Fractalscape
         private bool _windowIsStackable = true;
         private const string ExplorationMenuItem = "Exploration";
         private float _repositionTime;
-
+        
         public enum CanvasType
         {
             God,
@@ -173,7 +173,13 @@ namespace Fractalscape
         {
             var libraryWindow = GetWindow<PrimaryWindow>(WindowNames.LibraryWindow);
             var storeWindow = GetWindow<PrimaryWindow>(WindowNames.StoreWindow);
+            FractalLog.Print(_availableItems, "Available Fractals");
+            FractalLog.Print(_downloadedItems, "Downloaded Fractals");
+            
             var items = ListIntersection(_availableItems, _downloadedItems);
+            
+            FractalLog.Print(items[0], "Store Fractals");
+            FractalLog.Print(items[1], "Library Fractals");
             yield return null;
 
             libraryWindow.gameObject.SetActive(true);
@@ -205,23 +211,23 @@ namespace Fractalscape
             storeWindow.gameObject.SetActive(false);
             AppSession.AppCamera.cullingMask = -1;
         }
+        
+        
         private static List<Fractal>[] ListIntersection(List<Fractal> l1, List<Fractal> l2)
         {
             var newL1 = new List<Fractal>(); //Where l2 is a subset of l1
             var newL2 = new List<Fractal>();
+            
+            Debug.Log(l1);
+            Debug.Log(l2);
 
             for (var i = 0; i < l1.Count; i++)
             {
-                var val = l1[i];
-                if (l2.Contains(val))
-                {
-                    newL2.Add(val);
-                }
-                else
-                {
-                    newL1.Add(val);
-                }
+                if (FractalLog.Contains(l2, l1[i].Name)) newL2.Add(l1[i]);
+                else newL1.Add(l1[i]);
             }
+            Debug.Log(l1.Count);
+            Debug.Log(l2.Count);
             return new[] {newL1, newL2};
         }
 
@@ -310,6 +316,11 @@ namespace Fractalscape
             InputTracking.Recenter();
         }
 
+        public void AddToStack(GameObject go)
+        {
+            _windowStack.Push(go);
+        }
+        
         public GameObject CurrentWindow { get; private set; }
 
         public Window NewWindow { get; set; }

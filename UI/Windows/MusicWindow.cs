@@ -130,9 +130,15 @@ namespace Fractalscape
 
         public void LoadNewSong(Song song, float duration)
         {
-            SetAlbumCover(AudioManager.Instance.GetAlbumArt(song.Art));
-            SetAlbumName(song.AlbumName);
-            SetArtistName(song.Artist);
+            if (song.AlbumName != _albumName)
+            {
+                SetAlbumCover(AudioManager.Instance.GetAlbumArt(song.Art));
+                SetAlbumName(song.AlbumName);
+            }
+            if (song.Artist != _artistName)
+            {
+                SetArtistName(song.Artist);
+            }
             SetSongName(song.Name);
             SetSongLength(duration);
             _lastUpdateTime = 0;

@@ -5,12 +5,14 @@ using System.Threading;
 using Oculus.Platform;
 using Oculus.Platform.Models;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Fractalscape
 {
     public sealed class PurchaseRequest : IRequest
     {
-        private readonly string _sku;
+        private Fractal _fractal;
+        private readonly string _displayName;
         private Job _purchaseJob;
         private Message _response;
         private Action<bool, IRequest> _callback;
@@ -23,29 +25,28 @@ namespace Fractalscape
         private bool _running;
         private const string PurchaseMessage = "Purchasing Selected Experience";
         private const string SuccessMessage = "Transaction complete! Visit the main menu to download your experience.";
-        private const string FailureMessage = "Transaction failed! Something must be wrong Oculus's servers. Please try again later.";
+        private const string FailureMessage = "Transaction failed! Please try again later or contact us.";
         private const string ProcessingMessage = "Processing...";
 
-        public PurchaseRequest(string sku)
+        public PurchaseRequest(string displayName, Fractal fractal)
         {
-            _sku = sku;
+            _fractal = fractal;
+            _displayName = displayName;
         }
 
         public void Setup()
         {
             _storeWindow = WindowManager.Instance.GetWindow<PrimaryWindow>(WindowNames.StoreWindow);
             _progressWindow = WindowManager.Instance.GetWindow<ProgressWindow>(WindowNames.ProgressWindow);
-            _purchaseJob = new Job(new Thread(delegate() { IAP.LaunchCheckoutFlow(_sku).OnComplete(message =>
-            {
-                _response = message;
-            }); }));
+            _purchaseJob = new Job(new Thread(delegate() { 
+            }));
 
             _requestData = new RequestData(new ProgressMessage {Header = PurchaseMessage, Body = ProcessingMessage});
             _progressWindow.AddProgressData(_requestData);
             WindowManager.Instance.ChangeWindow(WindowNames.ProgressWindow, false);
-            _referencedItem = _storeWindow.GetMenuItem(_sku);
+            _referencedItem = _storeWindow.GetMenuItem(_displayName);
             _referencedItem.ChangeTitleImageColour(MenuItem.ActivatedColourIndx);
-            Menu.AddOpenedItem(_requestData, _sku);
+            Menu.AddOpenedItem(_requestData, _displayName);
         }
 
         public void Trigger(Action<bool, IRequest> callback)
@@ -53,43 +54,29 @@ namespace Fractalscape
             Setup();
             _callback = callback;
 
-            if (AppSession.OculusDown)
-            {
-                _callback(false, this);
-            }
-            RequestProcessor.Instance.StartCoroutine(HandlePurchase());
+            HandlePurchase();
         }
 
-        private IEnumerator HandlePurchase()
+        private void HandlePurchase() //this is sk
         {
-            yield return RequestProcessor.Instance.StartCoroutine(_purchaseJob.Start());
-            if (_response.IsError)
+            Debug.Log("Beginnning purchase request.");
+            IAP.LaunchCheckoutFlow(_fractal.Sku).OnComplete(message =>
             {
-                _error = true;
-                _callback(false, this);
-            }
-            else
-            {
-                IAP.GetViewerPurchases().OnComplete(message =>
+                if (message.IsError)
                 {
-                    string str;
-                        if (message.IsError)
-                        {
-                            AppSession.PurchasedFractals.Add(new Fractal{Name = _sku, Type = 1});
-                            var log = new FractalLog {Fractals = AppSession.PurchasedFractals};
-                            str = JsonUtility.ToJson(log);
-                        }
-                        else
-                        {
-                            var log = ListToFractalLog(message.GetPurchaseList());
-                            str = JsonUtility.ToJson(log);
-                            AppSession.PurchasedFractals = log.Fractals;
-                        }
+                    Debug.Log("Purchase failed");
+                    _error = true;
+                    _callback(false, this);
+                }
+                else
+                {
+                    AppSession.PurchasedFractals.Add(_fractal);
+                    var str = JsonUtility.ToJson(AppSession.PurchasedFractals);
                     PlayerPrefs.SetString(LogNames.PurchasedFractals, str);
                     PlayerPrefs.Save();
-                    });
-                _callback(true, this);
-            }
+                    _callback(true, this);
+                }
+            });             
         }
 
         public string AlertMessage(bool success)
@@ -99,7 +86,7 @@ namespace Fractalscape
 
         public void FinalizeRequest(bool success)
         {
-            Menu.RemoveOpenItem(_sku);
+            Menu.RemoveOpenItem(_displayName);
             _referencedItem.ChangeTitleImageColour(MenuItem.DefaultColourIndx);
             _running = false;
         }
@@ -120,10 +107,21 @@ namespace Fractalscape
 
         public static FractalLog ListToFractalLog(PurchaseList list)
         {
+            Assert.IsNotNull(list);
             var log = new FractalLog();
-            foreach (var purchase in list)
+            log.Fractals = new List<Fractal>();
+            Assert.IsNotNull(log, "Log is NULL");
+            Assert.IsNotNull(log.Fractals, "Log.Fractals is null");
+            for (var i = 0; i < list.Count; i++)
             {
-                log.Fractals.Add(new Fractal{Name = purchase.Sku, Type = 1});
+                Assert.IsNotNull(FractalLog.GetElementBySku(AppSession.DownloadedFractals, list[i].Sku), "FractalLog.GetElementBySku(AppSession.DownloadedFractals, list[i].Sku) != null");
+                Assert.IsNotNull("");
+                log.Fractals.Add(new Fractal
+                {
+                    Name = FractalLog.GetElementBySku(AppSession.DownloadedFractals, list[i].Sku).Name, 
+                    Sku = list[i].Sku,
+                    Type = 1
+                });    
             }
             return log;
         }

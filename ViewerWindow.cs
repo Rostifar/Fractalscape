@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,16 +10,25 @@ namespace Fractalscape
         private bool _accessedTutorial;
 
         [SerializeField] private Image _previewImage;
+        private MenuItem _currentItem; 
         public GameObject ViewerWindowExtraneous;
 
         public override void EnableSiblings()
         {
             ViewerWindowExtraneous.SetActive(true);
+            
+            _previewImage.sprite = _currentItem.ThiccImage;
         }
 
         public override void DisableSiblings()
         {
             ViewerWindowExtraneous.SetActive(false);
+        }
+
+        public void SetCurrentItem(MenuItem item)
+        {
+            _currentItem = item;
+            _previewImage.sprite = item.ThiccImage;
         }
 
         public void SetPreviewImage(Sprite sprite)
@@ -42,10 +52,15 @@ namespace Fractalscape
         {
             WindowManager.Instance.GetWindow<ViewerNavigationWindow>(WindowNames.ViewerNavigationWindow)
                 .ActivateIcon(ViewerNavigationWindow.ButtonType.Viewer);
-            if (_previewImage == null || _previewImage.sprite != AppSession.SelectedItem.Image)
-            {
-                SetPreviewImage(AppSession.SelectedItem.Image);
-            }
+            
+            Debug.Log("Viewing:" + AppSession.SelectedItem.Name);
+
+            GetComponentInChildren<Image>().sprite = _currentItem.ThiccImage;
+            
+            _previewImage.SetAllDirty();
+            
+            Debug.Log(_previewImage.sprite.name);
+
             EnableSiblings();
         }
 

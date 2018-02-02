@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using CurvedUI;
+using UnityEngine;
 using Assert = UnityEngine.Assertions.Assert;
 
 namespace Fractalscape
@@ -72,6 +73,7 @@ namespace Fractalscape
 
         public void RenderNewItems()
         {
+            if (_currentItems.Count == 0 && _items.Count > 0) _currentItems = LoadNewItems(0);
             for (var i = 0; i < _currentItems.Count; i++)
             {
                 if (_currentItems[i] == null) continue;
@@ -85,7 +87,7 @@ namespace Fractalscape
             {
                 case RefreshDirection.Right:
                     if (_indx == _items.Count - 1) return;
-                    _indx++;
+                    _indx++;    
                     break;
                 case RefreshDirection.Left:
                     if (_indx - (ItemsPerFrame - 1) <= 0) return;
@@ -159,8 +161,10 @@ namespace Fractalscape
         {
             for (var i = 0 ; i < fractals.Count; i++) //no it cannot be converted you lying piece of....
             {
-                var go = AppData.Ref.Fractals[fractals[i]];
-                AddItem(go.GetComponent<MenuItem>());
+                var go = AppData.Ref.Fractals[fractals[i].Name];
+                var menuItem = go.GetComponent<MenuItem>();
+                menuItem.Fractal = fractals[i];
+                AddItem(menuItem);
                 yield return null;
             }
             _indx = ItemsPerFrame - 1 > _items.Count - 1 ? _items.Count - 1 : ItemsPerFrame - 1;
@@ -184,7 +188,7 @@ namespace Fractalscape
         {
             for (var i = 0; i < _items.Count; i++)
             {
-                if (_items[i].Sku != item || _items[i] == null) continue;
+                if (_items[i].Name != item || _items[i] == null) continue;
                 return _items[i];
             }
             return null;
@@ -205,6 +209,7 @@ namespace Fractalscape
         public void InverseAdd(MenuItem item)
         {
             if (!_items.Contains(item)) return;
+            Debug.Log("We made it!");
             var inverseWindow = WindowManager.Instance.GetWindow<PrimaryWindow>(WindowName == WindowNames.StoreWindow
                 ? WindowNames.LibraryWindow
                 : WindowNames.StoreWindow);
@@ -223,6 +228,8 @@ namespace Fractalscape
             RenderNewItems(_currentItems);
             inverseWindow.RenderNewItems();
             inverseWindow.RepositionItems();
+            Debug.Log("Window length:" + _currentItems.Count);
+            Debug.Log("Inverse Window Length: " + inverseWindow._items.Count);
         }
 
         public void FlattenItems()

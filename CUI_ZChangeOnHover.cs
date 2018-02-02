@@ -14,10 +14,12 @@ namespace CurvedUI
 
         void Update()
         {
+            /*
             if((transform as RectTransform).anchoredPosition3D.z == 0 && !Zoomed) return;
             (transform as RectTransform).anchoredPosition3D = (transform as RectTransform).anchoredPosition3D.ModifyZ(Mathf.Clamp((Zoomed ?
                 (transform as RectTransform).anchoredPosition3D.z + Time.deltaTime * (OnHoverZ - restZ) * 6 :
                 (transform as RectTransform).anchoredPosition3D.z - Time.deltaTime * (OnHoverZ - restZ) * 6), OnHoverZ, restZ));
+                */
         }
 
         public void FlattenObj()
