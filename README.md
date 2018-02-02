@@ -1,5 +1,5 @@
 # Fractalscape
-(Fractalscape.jpg)
+![](Fractalscape.jpg)
 ## What is Fractalscape?
 ### Fractalscape is a Gear Vr application that visualizes beautiful and breathtaking 3D fractals. Visit [here](https://www.oculus.com/experiences/gear-vr/1247742675355364/) to learn more.
 
